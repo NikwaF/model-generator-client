@@ -1,0 +1,23 @@
+<nav class="navbar-default navbar-static-side" role="navigation">
+    <div class="sidebar-collapse">
+        <ul class="nav metismenu" id="side-menu">
+            <li class="nav-header">
+                <div class="dropdown profile-element"> 
+                    <span>
+                        <img alt="image" class="logo_idm_header" src="/assets/css/img/logo-indomaret.png" />
+                    </span>
+            
+                </div>
+                <div class="logo-element">
+                    IDM
+                </div>
+            </li>
+            <li class='{{ if eq .navSession "C# Get SQL Statement Generator" }} active {{ end }}'>
+                <a href="/api-generator"><i class="fa fa-paper-plane"></i> <span class="nav-label">C# Get SQL Statement Generator</span></a>
+            </li>
+            <li class='{{ if eq .navSession "C# SQL Statement CSV Generator" }} active {{ end }}'>
+                <a href="/generate-csv-getdata"><i class="fa fa-paper-plane"></i> <span class="nav-label">C# SQL Statement CSV Generator</span></a>
+            </li>            
+        </ul>
+    </div>
+</nav>

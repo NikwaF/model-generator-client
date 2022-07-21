@@ -1,0 +1,225 @@
+{{ define "csvgen" }}
+<!DOCTYPE html>
+<html>
+<head>
+    {{ template "_header.html" . }}
+    <link rel="stylesheet" href="/assets/css/pretty-print-json.css">
+    <style>
+  .select2-selection__rendered {
+line-height: 32px !important;
+}
+
+.select2-selection {
+height: 34px !important;
+}
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        {{ template "_navbar.html" . }}
+        <div id="page-wrapper" class="gray-bg">
+            {{ template "_topbar.html" . }}
+            {{ template "_breadcrumb.html" . }}
+            <div class="wrapper wrapper-content animated fadeInRight">            
+                <!-- content -->
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="ibox float-e-margins">
+                            <div class="ibox-title">
+                                <h5>C# Get SQL Statement Generator</h5>
+                                <div class="ibox-tools">
+                                    <a class="collapse-link">
+                                        <i class="fa fa-chevron-up"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="ibox-content">
+                                
+                                <div class="form-group row">
+                                      <div class="col-md-4">
+                                          <div class="col-md-12">
+                                              <label for="">Koneksi</label>
+                                              <div class="input-group">
+                                              <select id="input-koneksi" class="select2-dropdown form-control" style="width: 100%;">
+                                              
+                                              </select>
+                                              </div>
+                                          </div> 
+                                      </div>
+                                      <div class="col-md-4">
+                                          <div class="col-md-12">
+                                              <label for="">Nama Model</label>
+                                              <div class="input-group">
+                                                  <input type="text" class="form-control" id="f_nm_model">
+                                              
+                                              </div>
+                                          </div> 
+                                      </div>       
+                                      <div class="col-md-4">
+                                          <div class="col-md-12">
+                                              <label for="">Nama Function</label>
+                                              <div class="input-group">
+                                                  <input type="text" class="form-control" id="f_nm_function">
+                                              
+                                              </div>
+                                          </div> 
+                                      </div>  
+                                </div>
+
+                                <div class="form-group row">
+                                 
+                                        <div class="col-md-4">
+                                            <div class="col-md-12">
+                                                <label for="">Nama Csv</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="f_nm_csv">
+                                                
+                                                </div>
+                                            </div> 
+                                        </div>       
+                                </div>
+
+                                <div class="col-md-12">
+                                <div class="row mb-2">
+                                    <div class="col-md-12">
+                                        <label for="">Query</label>
+                                        <div class="row mb-2">
+                                            <div class="col-md-12 mb-2" >
+                                                <textarea class="form-control" name="query-box" id="query-box" width="100%" style="height: 200px !important;"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 btn-action text-right">
+                                    <a href="#" class="btn btn-primary" id="btn-simpan-api-modal">Generate</a>
+                                </div>                                  
+
+                                <div class="row mb-2">
+                                    <div class="col-md-12">
+                                        <label for="">Hasil</label>
+                                        <div class="row mb-2">
+                                            <div class="col-md-12 mb-2" >
+                                                <textarea class="form-control" name="info-result" id="info-result" width="100%" style="height: 200px !important;"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>   
+                                
+                            </div>              
+                  
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- end content -->
+            </div>
+            <div class="footer">
+                <!-- <strong>Copyright</strong> PT. Indomarco Prismatama &copy; 2020 -->
+            </div>
+        </div>
+    </div>
+    {{ template "_scripts.html" . }}
+    <script rel="stylesheet" src="/assets/js/pretty-print-json.min.js"></script>
+    <script rel="stylesheet" src="/assets/js/beautify.min.js"></script>
+    <script rel="stylesheet" src="/assets/swal/dist/sweetalert2.all.min.js"></script>
+
+
+    <script src="assets/js/script.js?v{{ .randomNumber }}"></script>
+    <script>
+        $(document).ready(function(){
+
+            getDataConnection().then(res => {
+                if(res.status != "error")
+                {
+                    res.data.forEach(element => {
+                        $('#input-koneksi').append($('<option>', {
+                            value: element.ID,
+                            text: element.NM_CON
+                         }));
+                    });
+                }
+       
+            }).catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oppss..',
+                    text: err.responseJSON.message
+                });                
+            });
+
+            $('#btn-simpan-api-modal').on('click',generateGetData)
+        });
+
+        function getDataConnection()
+        {
+            return new Promise((resolve,reject) => {
+                $.get("/get-connections",function( data ) {
+                    resolve(data)
+                }).fail(function(error){
+                    reject(error)
+                });
+            });
+        }
+
+        function generateGetData()
+        {
+            const  query = $('#query-box').val();
+            const idconn = $('#input-koneksi').val();
+            const model = $('#f_nm_model').val();
+            const fungsi = $('#f_nm_function').val();
+            const nm_csv = $('#f_nm_csv').val()
+            let pesan = "";
+
+            if(idconn == null || idconn == '' || model == null || model == '' || fungsi == '' || fungsi == null ||  nm_csv == '' || nm_csv == null){
+                pesan = "Lengkapi Form Diatas";
+            }
+
+            if(query.trim() == '')
+            {
+                pesan = "Query harus diisi";
+            }
+
+            if(pesan != "")
+            {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oppss..',
+                    text: pesan
+                });
+                return;
+            }
+            
+            $.ajax({
+                url: "/generate-csv-getdata",
+                type: "POST",
+                dataType: "JSON",
+                data: {query:query,idcon:idconn,model:model, fungsi:fungsi,nmcsv:nm_csv},
+                success: function(res){
+                    if(res.status == "success")
+                    {
+                        // $("#info-result").html(beautify(res.text)) 
+                        $("#info-result").val(js_beautify(res.text)) 
+                        // $("#info-result").val('asdfsadf') 
+                    }else{ 
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oppss..',
+                            text: res.message
+                        });
+                    }
+                   
+                } ,error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'erorr',
+                        text: errorThrown
+                    });
+                }
+            })
+        }
+
+    </script>
+</body>
+</html>
+{{ end }}

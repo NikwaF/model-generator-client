@@ -1,0 +1,379 @@
+{{ define "index" }}
+<!DOCTYPE html>
+<html>
+<head>
+    {{ template "_header.html" . }}
+    <link rel="stylesheet" href="/assets/css/pretty-print-json.css">
+    <style>
+  .select2-selection__rendered {
+line-height: 32px !important;
+}
+
+.select2-selection {
+height: 34px !important;
+}
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        {{ template "_navbar.html" . }}
+        <div id="page-wrapper" class="gray-bg">
+            {{ template "_topbar.html" . }}
+            {{ template "_breadcrumb.html" . }}
+            <div class="wrapper wrapper-content animated fadeInRight">            
+                <!-- content -->
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="ibox float-e-margins">
+                            <div class="ibox-title">
+                                <h5>C# Get SQL Statement Generator</h5>
+                                <div class="ibox-tools">
+                                    <a class="collapse-link">
+                                        <i class="fa fa-chevron-up"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="ibox-content">
+                                
+                                <div class="form-group row">
+                                    <div class="col-md-4">
+                                        <div class="col-md-12">
+                                            <label for="">Koneksi</label>
+                                            <div class="input-group">
+                                            <select id="input-koneksi" class="select2-dropdown form-control" style="width: 100%;">
+                                             
+                                            </select>
+                                             </div>
+                                        </div> 
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="col-md-12">
+                                            <label for="">Nama Model</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="f_nm_model">
+                                             
+                                             </div>
+                                        </div> 
+                                    </div>       
+                                    <div class="col-md-4">
+                                        <div class="col-md-12">
+                                            <label for="">Nama Function</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="f_nm_function">
+                                             
+                                             </div>
+                                        </div> 
+                                    </div>                                                                    
+                                </div>
+                                <div class="col-md-12">
+                                <div class="row mb-2">
+                                    <div class="col-md-12">
+                                        <label for="">Query</label>
+                                        <div class="row mb-2">
+                                            <div class="col-md-12 mb-2" >
+                                                <textarea class="form-control" name="query-box" id="query-box" width="100%" style="height: 200px !important;"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 btn-action text-right">
+                                    <a href="#" class="btn btn-primary" id="btn-simpan-api-modal">Generate</a>
+                                </div>                                  
+
+                                <div class="row mb-2">
+                                    <div class="col-md-12">
+                                        <label for="">Hasil</label>
+                                        <div class="row mb-2">
+                                            <div class="col-md-12 mb-2" >
+                                                <textarea class="form-control" name="info-result" id="info-result" width="100%" style="height: 200px !important;"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>   
+                                
+                            </div>              
+                  
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- end content -->
+            </div>
+            <div class="footer">
+                <!-- <strong>Copyright</strong> PT. Indomarco Prismatama &copy; 2020 -->
+            </div>
+        </div>
+    </div>
+    {{ template "_scripts.html" . }}
+    <script rel="stylesheet" src="/assets/js/pretty-print-json.min.js"></script>
+    <script rel="stylesheet" src="/assets/js/beautify.min.js"></script>
+    <script rel="stylesheet" src="/assets/swal/dist/sweetalert2.all.min.js"></script>
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.4/beautify.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.4/beautify-css.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.4/beautify-html.js"></script> -->
+
+    <script src="assets/js/script.js?v{{ .randomNumber }}"></script>
+    <script>
+        $(document).ready(function(){
+
+            getDataConnection().then(res => {
+                if(res.status != "error")
+                {
+                    res.data.forEach(element => {
+                        $('#input-koneksi').append($('<option>', {
+                            value: element.ID,
+                            text: element.NM_CON
+                         }));
+                    });
+                }
+       
+            }).catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oppss..',
+                    text: err.responseJSON.message
+                });                
+            });
+
+            $('#btn-simpan-api-modal').on('click',generateGetData)
+        });
+
+        function checkJumlah() {
+            const element = {jml_param:"input[name='jml_param']", jml_data:"input[name='jml_data']", text_err: "<h4 style='color:red;'>Input tidak benar, periksa query</h4>"};
+            $(element.jml_data).next("h4").remove();
+            $(element.jml_param).next("h4").remove();
+            let jml_param = $(element.jml_param).val() * 1;
+            let jml_data = $(element.jml_data).val() * 1;
+            const query  = $("#query-box").val();
+            const p = /(%p|%P)/gm
+            const d = /(%d|%D)/gm
+            if(jml_param === "" || jml_param < 0) jml_param = 0*1;
+            if(jml_data === "" || jml_data < 0) jml_data = 0*1;
+
+            let p_param= query.match(p);
+            let p_data = query.match(d);
+            p_param === null ? p_param = 0 : p_param = p_param.length;
+            p_data === null ? p_data = 0 : p_data =  p_data.length;
+            const status = {param: false, data:false};
+            if(p_param !== jml_param){
+                status.param = false;
+                $(element.jml_param).parent().append(element.text_err);
+            } else {
+                $(element.jml_param).next("h4").remove();
+                status.param = true;
+            } 
+
+            if (p_data !== jml_data){
+                status.data = false;
+                $(element.jml_data).parent().append(element.text_err);
+            } else {
+                $(element.jml_data).next("h4").remove();
+                status.data = true; 
+            }
+            return status;
+        }
+
+
+        function boxResult(){
+            if($(".slide-form>.col-8").css("display") === "none"){
+                const btn_test = $("<a href='#' class='btn btn-success btn-block' id='test-query'>Test Query</a><hr>");
+                $(".box-tool").append(btn_test);
+            } else{
+                $(".box-tool>a,.box-tool>hr").remove();
+            }
+        };
+
+        function test_query(){
+            const params =  [... $('input[name="parameter[]"]')].map(item => item.value)
+            const datas =  [... $('input[name="data[]"]')].map(item => item.value)
+            const tipe = $("#dropType").val();
+            
+            data_param = {
+                tipe: tipe,
+                data: {
+                    DBCode :$("#input-koneksi").val(),
+                    query : $("#query-box").val(),
+                    tipe: tipe ,
+                    params : params,
+                    data : datas
+                }
+            };
+
+            return new Promise((resolve,reject) => {
+                $.ajax({
+                    url: "/execute-api" ,
+                    contentType: "application/json",
+                    type: "POST",
+                    dataType: "json",
+                    data: JSON.stringify(data_param), 
+                    success: res => {
+                        resolve(res);
+                    }
+                })
+            });
+        };
+
+        function MakeForm(){
+            const jml_param = $("input[name='jml_param']").val() * 1;
+            const jml_data = $("input[name='jml_data']").val() * 1;
+            $(".slide-form").children(".col-8").children().remove();
+
+            if (jml_param <= 0 && jml_data <= 0){
+                
+            } else {
+                if(jml_param > 0){
+                    if (jml_param > 3){
+                        makeInput("parameter","setengah");
+                    } else{
+                        makeInput("parameter","full");
+                    } 
+                }
+
+                if(jml_data > 0 ){
+                    if(jml_data > 3){
+                        makeInput("data","setengah");
+                    } else {
+                        makeInput("data","full");
+                    }
+                }
+            }
+        };
+
+        function makeInput(type,size){
+            const div = $("<div class='row form-param' />")
+            const div_full  = $("<div class='col-md-12'/>");
+            const div_setengah  = "<div class='col-md-6'/>";
+            const jml_param = $("input[name='jml_param']").val() * 1;
+            const jml_data = $("input[name='jml_data']").val() * 1;
+            const row_params = $("<div class='row'/>");
+            $(row_params).append(div_full.append("<h3 class='text-capitalize'>"+type+"</h3>"));
+            const jml = type == "parameter"  ? jml_param : jml_data;
+            for( let i = 1 ; i <= jml; i ++) {
+                const div_param = size == "setengah" ? $(div_setengah) : $(div_full);
+                div_param.addClass("mb-2");
+                const input_field  = $("<input class='form-control'/>");
+                const label = $("<label></label>"); 
+                label.text(type+" "+i);
+                label.addClass("text-capitalize");
+                input_field.attr({name: type+"[]"});
+                div_param.append(label);
+                div_param.append(input_field);
+                $(row_params).append(div_param);
+            }
+            $(".slide-form").children(".col-8").append(row_params);
+        };
+
+        function customSlideToggle(e)
+        {
+            var show = e.css("display") === "none";
+            if (show) {
+                e.css("display", "visible")
+                e.slideDown('slow');
+            }
+            else
+            {
+                e.slideUp('slow',function(){
+                    e.css("visibility", "hidden")
+                    e.show();
+                });
+            }
+            $(".slide-form").toggleClass("border-bottom");
+        }
+
+        function getDataConnection()
+        {
+            return new Promise((resolve,reject) => {
+                $.get("/get-connections",function( data ) {
+                    resolve(data)
+                }).fail(function(error){
+                    reject(error)
+                });
+            });
+        }
+
+        function generateGetData()
+        {
+            const  query = $('#query-box').val();
+            const idconn = $('#input-koneksi').val();
+            const model = $('#f_nm_model').val();
+            const fungsi = $('#f_nm_function').val();
+            let pesan = "";
+
+            if(idconn == null || idconn == '' || model == null || model == '' || fungsi == '' || fungsi == null){
+                pesan = "Lengkapi Form Diatas";
+            }
+
+            if(query.trim() == '')
+            {
+                pesan = "Query harus diisi";
+            }
+
+            if(pesan != "")
+            {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oppss..',
+                    text: pesan
+                });
+                return;
+            }
+            
+            $.ajax({
+                url: "/generate-getdata",
+                type: "POST",
+                dataType: "JSON",
+                data: {query:query,idcon:idconn,model:model, fungsi:fungsi},
+                success: function(res){
+                    if(res.status == "success")
+                    {
+                        // $("#info-result").html(beautify(res.text)) 
+                        $("#info-result").val(js_beautify(res.text)) 
+                        // $("#info-result").val('asdfsadf') 
+                    }else{ 
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oppss..',
+                            text: res.message
+                        });
+                    }
+                   
+                } ,error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'erorr',
+                        text: errorThrown
+                    });
+                }
+            })
+        }
+
+
+        $("#preview-btn").on("click" , function(e){
+            e.preventDefault();
+            const check = checkJumlah();
+            if(!check.param || !check.data ){
+                return;
+            }
+            MakeForm();
+            boxResult();
+            //$(".slide-form>.col-8,.slide-form>.box-result>:not('.btn-action')").toggle();
+            //console.log($(".slide-form>.box-result>:not('.btn-action')"))
+            $(".slide-form>.col-8").toggle();
+            //customSlideToggle($(".slide-form>.col-8, .slide-form>.box-result>:not('.btn-action')"));
+            $("#test-query").on("click",function(e){
+                e.preventDefault();
+                const check = checkJumlah();
+                if(!check.param || !check.data ){
+                    return;
+                }
+                test_query().then(res => {
+                    $("#info-result").html(prettyPrintJson.toHtml(res))
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+{{ end }}
